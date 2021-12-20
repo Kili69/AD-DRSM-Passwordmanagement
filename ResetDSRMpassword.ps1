@@ -48,6 +48,8 @@ possibility of such damages
     Version Tracking
     2021-10-29
     Initial Version available on GitHub
+    2021-12-20
+    fix command line
 #>
 <#
     script parameters
@@ -63,9 +65,6 @@ param (
     
 )
 
-#NTDSUITL command to reste the password
-$DsrmSyncCommand = 'NTDSUTIL “SET DSRM PASSWORD” “SYNC FROM DOMAIN ACCOUNT ' + $DSRMUserName + '” Q Q'
-
 #if the parameter $restSyncUserPassword is true the password will be changed 
 if ($resetSyncUserPassword)
 {
@@ -77,12 +76,10 @@ Foreach ($DomainController in (Get-ADDomainController).Hostname)
     try
     {
         Write-Host "DSRMpassword Reset on " $DomainController
-        Invoke-Command -ScriptBlock { $DsrmSyncCommand }-ComputerName $DomainController
+        Invoke-Command -ScriptBlock {& NTDSUTIL.EXE -ArgumentList "SET DSRM PASSWORD", "SYNC FROM DOMAIN ACCOUNT $DSRMUserName", "Q", "Q"}
     }
     catch
     {
         Write-Host "Reset on $domainController failed"
     }
-}
-
-    
+}    
