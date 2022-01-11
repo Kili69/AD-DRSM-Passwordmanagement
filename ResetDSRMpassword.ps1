@@ -50,6 +50,8 @@ possibility of such damages
     Initial Version available on GitHub
     2021-12-20
     fix command line
+    2022-01-11
+    fix invoke-command
 #>
 <#
     script parameters
@@ -71,12 +73,16 @@ if ($resetSyncUserPassword)
     Set-ADAccountPassword $user -Reset
 }
 #Reset the password on every domain controller in the domain
-Foreach ($DomainController in (Get-ADDomainController).Hostname)
+Foreach ($DomainController in (Get-ADDomainController -Filter *).Hostname)
 {
     try
     {
         Write-Host "DSRMpassword Reset on " $DomainController
-        Invoke-Command -ScriptBlock {& NTDSUTIL.EXE -ArgumentList "SET DSRM PASSWORD", "SYNC FROM DOMAIN ACCOUNT $DSRMUserName", "Q", "Q"}
+        $ResetBlock = {
+            param($userName)
+            ntdsutil.exe "SET DSRM PASSWORD", "SYNC FROM DOMAIN ACCOUNT $userName" Q Q
+        }
+        Invoke-Command -ComputerName $DomainController -ScriptBlock $ResetBlock -ArgumentList $DsrmUserName
     }
     catch
     {
